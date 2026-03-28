@@ -1,0 +1,70 @@
+// 1. Configuración de conexión
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 2. Entidades Principales
+model User {
+  id        String    @id // UID de Firebase
+  email     String    @unique
+  name      String
+  role      Role      @default(CUSTOMER)
+  provider  Provider? // Relación 1:1 si decide ser prestador
+  bookings  Booking[]
+  reviews   Review[]
+  createdAt DateTime  @default(now())
+}
+
+model Provider {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  bio         String?
+  category    String   // Aquí defines si es Plomero, Electricista, etc.
+  location    Unsupported("geography(Point, 4326)")? // POSTGIS
+  active      Boolean  @default(true)
+  bookings    Booking[]
+  reviews     Review[]
+}
+
+model Booking {
+  id          String   @id @default(uuid())
+  customerId  String
+  customer    User     @relation(fields: [customerId], references: [id])
+  providerId  String
+  provider    Provider @relation(fields: [providerId], references: [id])
+  status      String   @default("PENDING") // PENDING, ACCEPTED, COMPLETED, CANCELLED
+  price       Float
+  payment     Payment?
+  createdAt   DateTime @default(now())
+}
+
+model Payment {
+  id        String   @id @default(uuid())
+  bookingId String   @unique
+  booking   Booking  @relation(fields: [bookingId], references: [id])
+  amount    Float
+  status    String   // SUCCESS, FAILED, PENDING
+  method    String   // Stripe, PayPal, Cash
+  updatedAt DateTime @updatedAt
+}
+
+model Review {
+  id          String   @id @default(uuid())
+  rating      Int
+  comment     String?
+  customerId  String
+  customer    User     @relation(fields: [customerId], references: [id])
+  providerId  String
+  provider    Provider @relation(fields: [providerId], references: [id])
+}
+
+enum Role {
+  CUSTOMER
+  PROVIDER
+  ADMIN
+}
