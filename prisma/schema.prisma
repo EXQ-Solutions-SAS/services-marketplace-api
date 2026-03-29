@@ -4,43 +4,52 @@ datasource db {
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+
+}
+
+enum Role {
+  CLIENT
+  PROVIDER
+  ADMIN
 }
 
 // 2. Entidades Principales
 model User {
-  id        String    @id // UID de Firebase
-  email     String    @unique
-  name      String
-  role      Role      @default(CUSTOMER)
-  provider  Provider? // Relación 1:1 si decide ser prestador
-  bookings  Booking[]
-  reviews   Review[]
-  createdAt DateTime  @default(now())
+  id         String    @id @default(uuid())
+  firebaseId String    @unique
+  email      String    @unique
+  name       String?
+  role       Role      @default(CLIENT)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  provider   Provider?
+  bookings   Booking[]
+  reviews    Review[]
 }
 
 model Provider {
-  id          String   @id @default(uuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id])
-  bio         String?
-  category    String   // Aquí defines si es Plomero, Electricista, etc.
-  location    Unsupported("geography(Point, 4326)")? // POSTGIS
-  active      Boolean  @default(true)
-  bookings    Booking[]
-  reviews     Review[]
+  id       String                                 @id @default(uuid())
+  userId   String                                 @unique
+  user     User                                   @relation(fields: [userId], references: [id])
+  bio      String?
+  category String // Aquí defines si es Plomero, Electricista, etc.
+  location Unsupported("geography(Point, 4326)")? // POSTGIS
+  active   Boolean                                @default(true)
+  bookings Booking[]
+  reviews  Review[]
 }
 
 model Booking {
-  id          String   @id @default(uuid())
-  customerId  String
-  customer    User     @relation(fields: [customerId], references: [id])
-  providerId  String
-  provider    Provider @relation(fields: [providerId], references: [id])
-  status      String   @default("PENDING") // PENDING, ACCEPTED, COMPLETED, CANCELLED
-  price       Float
-  payment     Payment?
-  createdAt   DateTime @default(now())
+  id         String   @id @default(uuid())
+  customerId String
+  customer   User     @relation(fields: [customerId], references: [id])
+  providerId String
+  provider   Provider @relation(fields: [providerId], references: [id])
+  status     String   @default("PENDING") // PENDING, ACCEPTED, COMPLETED, CANCELLED
+  price      Float
+  payment    Payment?
+  createdAt  DateTime @default(now())
 }
 
 model Payment {
@@ -48,23 +57,17 @@ model Payment {
   bookingId String   @unique
   booking   Booking  @relation(fields: [bookingId], references: [id])
   amount    Float
-  status    String   // SUCCESS, FAILED, PENDING
-  method    String   // Stripe, PayPal, Cash
+  status    String // SUCCESS, FAILED, PENDING
+  method    String // Stripe, PayPal, Cash
   updatedAt DateTime @updatedAt
 }
 
 model Review {
-  id          String   @id @default(uuid())
-  rating      Int
-  comment     String?
-  customerId  String
-  customer    User     @relation(fields: [customerId], references: [id])
-  providerId  String
-  provider    Provider @relation(fields: [providerId], references: [id])
-}
-
-enum Role {
-  CUSTOMER
-  PROVIDER
-  ADMIN
+  id         String   @id @default(uuid())
+  rating     Int
+  comment    String?
+  customerId String
+  customer   User     @relation(fields: [customerId], references: [id])
+  providerId String
+  provider   Provider @relation(fields: [providerId], references: [id])
 }

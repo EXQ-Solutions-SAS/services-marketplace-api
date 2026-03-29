@@ -1,3 +1,5 @@
+--Create PostGIS
+CREATE EXTENSION IF NOT EXISTS postgis;
 -- CreateEnum
 CREATE TYPE "Role" AS ENUM ('CUSTOMER', 'PROVIDER', 'ADMIN');
 
