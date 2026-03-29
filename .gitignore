@@ -178,3 +178,6 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 exq-services-marketplace.json
+
+# Scripts de testing y secretos
+scripts/
