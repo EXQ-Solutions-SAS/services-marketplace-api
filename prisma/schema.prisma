@@ -20,27 +20,34 @@ model Category {
   name        String  @unique
   slug        String  @unique
   description String?
-  icon        String? // URL para el icono/imagen de la categoría
+  icon        String?
+  // Precio sugerido por la plataforma para esta categoría
+  basePrice   Float   @default(0)
 
-  // Relación con Services (se creará después, pero la dejamos lista)
   services Service[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@map("categories") // Para que en la DB la tabla se llame así en minúsculas
+  @@map("categories")
 }
 
-// Dejamos el modelo Service "esbozado" para que la relación no de error
 model Service {
-  id         String   @id @default(uuid())
-  title      String
-  category   Category @relation(fields: [categoryId], references: [id])
-  categoryId String
+  id           String @id @default(uuid())
+  title        String
+  description  String
+  // El precio que el profesional decide cobrar por hora
+  pricePerHour Float
 
-  // Relación con el User (Provider)
-  provider   User   @relation(fields: [providerId], references: [id])
+  // Relaciones
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
   providerId String
+  provider   User   @relation(fields: [providerId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("services")
 }
