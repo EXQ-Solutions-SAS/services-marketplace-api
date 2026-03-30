@@ -4,14 +4,45 @@ datasource db {
 }
 
 generator client {
-  provider        = "prisma-client-js"
-
+  provider = "prisma-client-js"
 }
 
 enum Role {
   CLIENT
   PROVIDER
   ADMIN
+}
+
+// Añade esto a tu archivo schema.prisma
+
+model Category {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  slug        String  @unique
+  description String?
+  icon        String? // URL para el icono/imagen de la categoría
+
+  // Relación con Services (se creará después, pero la dejamos lista)
+  services Service[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("categories") // Para que en la DB la tabla se llame así en minúsculas
+}
+
+// Dejamos el modelo Service "esbozado" para que la relación no de error
+model Service {
+  id         String   @id @default(uuid())
+  title      String
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId String
+
+  // Relación con el User (Provider)
+  provider   User   @relation(fields: [providerId], references: [id])
+  providerId String
+
+  @@map("services")
 }
 
 // 2. Entidades Principales
@@ -26,6 +57,7 @@ model User {
   provider   Provider?
   bookings   Booking[]
   reviews    Review[]
+  services   Service[] //
 }
 
 model Provider {
