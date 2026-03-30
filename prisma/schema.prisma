@@ -4,14 +4,54 @@ datasource db {
 }
 
 generator client {
-  provider        = "prisma-client-js"
-
+  provider = "prisma-client-js"
 }
 
 enum Role {
   CLIENT
   PROVIDER
   ADMIN
+}
+
+// Añade esto a tu archivo schema.prisma
+
+model Category {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  slug        String  @unique
+  description String?
+  icon        String?
+  // Precio sugerido por la plataforma para esta categoría
+  basePrice   Float   @default(0)
+
+  services Service[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@map("categories")
+}
+
+model Service {
+  id           String @id @default(uuid())
+  title        String
+  description  String
+  // El precio que el profesional decide cobrar por hora
+  pricePerHour Float
+
+  // Relaciones
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  providerId String
+  provider   User   @relation(fields: [providerId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  @@map("services")
 }
 
 // 2. Entidades Principales
@@ -26,6 +66,7 @@ model User {
   provider   Provider?
   bookings   Booking[]
   reviews    Review[]
+  services   Service[] //
 }
 
 model Provider {
