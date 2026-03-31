@@ -1,10 +1,11 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
 import * as admin from 'firebase-admin';
+import { UsersService } from '../users/users.service'; // Asegúrate de importar tu servicio
 
 @Injectable()
 export class FirebaseAuthGuard implements CanActivate {
-  constructor(private prisma: PrismaService) { }
+  // Inyectamos UsersService en lugar de Prisma directamente
+  constructor(private usersService: UsersService) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -19,32 +20,24 @@ export class FirebaseAuthGuard implements CanActivate {
     try {
       const decodedToken = await admin.auth().verifyIdToken(token);
 
-      // 1. Intentar buscar al usuario
-      let user = await this.prisma.user.findUnique({
-        where: { firebaseId: decodedToken.uid },
-      });
+      // Usamos la lógica de Upsert que ya tienes en tu UsersService
+      const user = await this.usersService.findOrCreateUser(
+        decodedToken.uid,
+        decodedToken.email || 'no-email@firebase.com',
+        decodedToken.name
+      );
 
-      // 2. SI NO EXISTE, LO CREAMOS (Sincronización automática)
-      if (!user) {
-        const email = decodedToken.email ?? 'no-email@firebase.com';
-        const name = decodedToken.name ?? email.split('@')[0];
-        user = await this.prisma.user.create({
-          data: {
-            firebaseId: decodedToken.uid,
-            email: email,
-            name: name,
-            role: 'CLIENT', // Rol por defecto
-          },
-        });
-        console.log('Nuevo usuario replicado en Postgres:', user.email);
+      // Si el usuario está borrado lógicamente, no lo dejamos pasar
+      if (user.deletedAt) {
+        throw new UnauthorizedException('User account is deactivated');
       }
 
-      // 3. Inyectar el usuario de Postgres en el request
+      // Inyectamos el usuario completo de Postgres en la request
       request['user'] = user;
 
       return true;
     } catch (error) {
-      throw new UnauthorizedException('Invalid token or sync failed');
+      throw new UnauthorizedException(error.message || 'Invalid token or sync failed');
     }
   }
 }
