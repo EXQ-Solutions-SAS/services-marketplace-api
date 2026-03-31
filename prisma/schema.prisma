@@ -47,6 +47,8 @@ model Service {
   providerId String
   provider   User   @relation(fields: [providerId], references: [id])
 
+  bookings Booking[] // Agrega esta línea para cerrar la relación
+
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
@@ -93,16 +95,42 @@ model Provider {
   reviews  Review[]
 }
 
+// 1. Definir el Enum arriba del todo en el schema
+enum BookingStatus {
+  PENDING
+  ACCEPTED
+  COMPLETED
+  CANCELLED
+}
+
 model Booking {
-  id         String   @id @default(uuid())
-  customerId String
-  customer   User     @relation("CustomerBookings", fields: [customerId], references: [id]) // Agregado "CustomerBookings"
-  providerId String
-  provider   Provider @relation(fields: [providerId], references: [id])
-  status     String   @default("PENDING") // PENDING, ACCEPTED, COMPLETED, CANCELLED
-  price      Float
-  payment    Payment?
-  createdAt  DateTime @default(now())
+  id          String        @id @default(uuid())
+  
+  // Relación con el Cliente
+  customerId  String
+  customer    User          @relation("CustomerBookings", fields: [customerId], references: [id])
+  
+  // Relación con el Proveedor
+  providerId  String
+  provider    Provider      @relation(fields: [providerId], references: [id])
+
+  // NUEVO: Relación con el Servicio específico
+  serviceId   String
+  service     Service       @relation(fields: [serviceId], references: [id])
+
+  hours       Int           @default(1) // Cantidad de horas contratadas
+  totalPrice  Float         // Calculado como: service.pricePerHour * hours
+
+  // NUEVO: Fecha de la cita
+  scheduledAt DateTime
+
+  status      BookingStatus @default(PENDING) // Ahora usa el Enum
+  
+  payment     Payment?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@map("bookings")
 }
 
 model Payment {
