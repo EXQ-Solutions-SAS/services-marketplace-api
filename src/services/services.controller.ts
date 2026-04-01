@@ -13,7 +13,7 @@ export class ServicesController {
 
   @Post()
   @UseGuards(FirebaseAuthGuard, RolesGuard)
-  @Roles('PROVIDER', 'ADMIN') // Los clientes no pueden crear servicios
+  @Roles('PROVIDER', 'ADMIN', 'CLIENT')
   create(@Body() createServiceDto: CreateServiceDto, @GetUser('id') userId: string) {
     return this.servicesService.create(createServiceDto, userId);
   }

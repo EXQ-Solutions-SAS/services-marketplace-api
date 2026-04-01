@@ -3,17 +3,17 @@ import { IsString, IsNotEmpty, IsNumber, IsUUID, Min } from 'class-validator';
 export class CreateServiceDto {
   @IsString()
   @IsNotEmpty()
-  title: string;
+  title!: string;
 
   @IsString()
   @IsNotEmpty()
-  description: string;
+  description!: string;
 
   @IsNumber()
   @Min(1)
-  pricePerHour: number; // El precio negociado/ofertado
+  pricePerHour!: number; // El precio negociado/ofertado
 
   @IsUUID()
   @IsNotEmpty()
-  categoryId: string;
+  categoryId!: string;
 }

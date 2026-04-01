@@ -44,8 +44,8 @@ model Service {
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id])
 
-  providerId String
-  provider   User   @relation(fields: [providerId], references: [id])
+  providerId   String
+  provider     Provider @relation(fields: [providerId], references: [id])
 
   bookings Booking[] // Agrega esta línea para cerrar la relación
 
@@ -70,7 +70,6 @@ model User {
   phone String?
   bio   String?
 
-  services Service[]
   bookings Booking[] @relation("CustomerBookings")
 
   // 3. Relación con Review (el error de image_59d379.png)
@@ -91,6 +90,7 @@ model Provider {
   category String // Aquí defines si es Plomero, Electricista, etc.
   location Unsupported("geography(Point, 4326)")? // POSTGIS
   active   Boolean                                @default(true)
+  services Service[]
   bookings Booking[]
   reviews  Review[]
 }

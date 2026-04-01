@@ -23,14 +23,26 @@ export class UsersService {
   async findAll() {
     return this.prisma.user.findMany({
       orderBy: { createdAt: 'desc' },
-      include: { _count: { select: { services: true } } }
+      include: {
+        provider: {
+          select: {
+            _count: {
+              select: { services: true }
+            }
+          }
+        }
+      }
     });
   }
 
   async findOneById(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      include: { services: true }
+      include: {
+        provider: {
+          include: { services: true }
+        }
+      }
     });
     if (!user) throw new NotFoundException('User not found');
     return user;
@@ -47,7 +59,13 @@ export class UsersService {
     const user = await this.prisma.user.findFirst({
       where: { id, deletedAt: null },
       include: {
-        _count: { select: { services: true } }
+        provider: {
+          select: {
+            _count: {
+              select: { services: true }
+            }
+          }
+        }
       }
     });
     if (!user) throw new NotFoundException('User not found');

@@ -12,21 +12,33 @@ export class BookingsService {
 
         const service = await this.prisma.service.findUnique({
             where: { id: serviceId },
+            include: {
+                provider: true // Esto nos trae el objeto Provider completo
+            }
         });
 
         if (!service) throw new NotFoundException('Service not found');
 
-        // Calculamos el total usando el nombre correcto del campo: pricePerHour
+        if (!service.provider) {
+            throw new BadRequestException('This service does not have a valid provider record');
+        }
+
+        if (service.provider.userId === customerId) {
+            throw new BadRequestException('You cannot book your own service');
+        }
+
         const totalPrice = service.pricePerHour * hours;
 
+        // 4. CREACIÓN: Usamos explícitamente el ID de la tabla PROVIDER
         return this.prisma.booking.create({
             data: {
-                customerId,
-                providerId: service.providerId,
-                serviceId: service.id,
-                hours,         // Guardamos las horas
-                totalPrice,    // Guardamos el cálculo final
+                customer: { connect: { id: customerId } },
+                provider: { connect: { id: service.provider.id } }, // <--- USAMOS EL ID DEL OBJETO PROVIDER
+                service: { connect: { id: service.id } },
+                hours,
+                totalPrice,
                 scheduledAt: new Date(scheduledAt),
+                status: 'PENDING',
             },
         });
     }
