@@ -13,8 +13,6 @@ enum Role {
   ADMIN
 }
 
-// Añade esto a tu archivo schema.prisma
-
 model Category {
   id          String  @id @default(uuid())
   name        String  @unique
@@ -47,7 +45,7 @@ model Service {
   providerId   String
   provider     Provider @relation(fields: [providerId], references: [id])
 
-  bookings Booking[] // Agrega esta línea para cerrar la relación
+  bookings Booking[] 
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -72,8 +70,8 @@ model User {
 
   bookings Booking[] @relation("CustomerBookings")
 
-  // 3. Relación con Review (el error de image_59d379.png)
-  reviews Review[]
+  reviewsWritten   Review[]  @relation("WrittenReviews")
+  reviewsReceived  Review[]  @relation("ReceivedReviews")
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -92,7 +90,6 @@ model Provider {
   active   Boolean                                @default(true)
   services Service[]
   bookings Booking[]
-  reviews  Review[]
 }
 
 // 1. Definir el Enum arriba del todo en el schema
@@ -125,6 +122,8 @@ model Booking {
   scheduledAt DateTime
 
   status      BookingStatus @default(PENDING) // Ahora usa el Enum
+
+  reviews          Review[]
   
   payment     Payment?
   createdAt   DateTime      @default(now())
@@ -144,11 +143,21 @@ model Payment {
 }
 
 model Review {
-  id         String   @id @default(uuid())
-  rating     Int
-  comment    String?
-  customerId String
-  customer   User     @relation(fields: [customerId], references: [id])
-  providerId String
-  provider   Provider @relation(fields: [providerId], references: [id])
+  id          String   @id @default(uuid())
+  rating      Int      // 1-5
+  comment     String?
+  
+  bookingId   String
+  booking     Booking  @relation(fields: [bookingId], references: [id])
+
+  reviewerId  String
+  reviewer    User     @relation("WrittenReviews", fields: [reviewerId], references: [id])
+
+  revieweeId  String
+  reviewee    User     @relation("ReceivedReviews", fields: [revieweeId], references: [id])
+
+  createdAt   DateTime @default(now())
+
+  @@unique([bookingId, reviewerId]) // Evita que una persona califique dos veces la misma cita
+  @@map("reviews")
 }

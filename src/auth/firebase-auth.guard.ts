@@ -36,7 +36,7 @@ export class FirebaseAuthGuard implements CanActivate {
       request['user'] = user;
 
       return true;
-    } catch (error) {
+    }catch (error: any) {
       throw new UnauthorizedException(error.message || 'Invalid token or sync failed');
     }
   }

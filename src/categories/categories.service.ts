@@ -14,7 +14,7 @@ export class CategoriesService {
       return await this.prisma.category.create({
         data: { ...createCategoryDto, slug },
       });
-    } catch (error) {
+    }catch (error: any) {
       if (error.code === 'P2002') throw new ConflictException('Category name or slug already exists');
       throw error;
     }
@@ -50,7 +50,7 @@ export class CategoriesService {
         where: { id },
         data: { ...updateCategoryDto, slug },
       });
-    } catch (error) {
+    }catch (error: any) {
       if (error.code === 'P2002') throw new ConflictException('Name or Slug already exists');
       throw error;
     }
