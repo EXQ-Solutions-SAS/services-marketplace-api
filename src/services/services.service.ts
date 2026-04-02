@@ -119,13 +119,33 @@ export class ServicesService {
   }
 
   async search(query: SearchServiceDto) {
-    const { q, category, minPrice, maxPrice, minRating } = query;
+    const { q, category, minPrice, maxPrice, minRating, lat, lng, distance } = query;
 
-    const where: any = {
-      deletedAt: null, // No mostrar borrados
-    };
+    // 1. SI HAY COORDENADAS: Usamos PostGIS (SQL RAW)
+    if (lat && lng) {
+      const radius = distance || 5000; // 5km por defecto
 
-    // Filtro por texto (Título o Descripción)
+      // Esta consulta trae los servicios cercanos usando PostGIS
+      const services = await this.prisma.$queryRaw`
+      SELECT 
+        s.*, 
+        c.name as "categoryName",
+        u.name as "userName",
+        ST_Distance(p.location, ST_MakePoint(${lng}, ${lat})::geography) as "distanceInMeters"
+      FROM "services" s
+      JOIN "Provider" p ON s."providerId" = p.id
+      JOIN "users" u ON p."userId" = u.id
+      JOIN "categories" c ON s."categoryId" = c.id
+      WHERE ST_DWithin(p.location, ST_MakePoint(${lng}, ${lat})::geography, ${radius})
+      AND s."deletedAt" IS NULL
+      ORDER BY "distanceInMeters" ASC
+    `;
+      return services;
+    }
+
+    // 2. SI NO HAY COORDENADAS: Usamos tu lógica actual de Prisma
+    const where: any = { deletedAt: null };
+
     if (q) {
       where.OR = [
         { title: { contains: q, mode: 'insensitive' } },
@@ -133,16 +153,10 @@ export class ServicesService {
       ];
     }
 
-    // Filtro por Categoría
     if (category) {
-      where.category = {
-        slug: {
-          equals: category.toLowerCase().trim(),
-        }
-      };
+      where.category = { slug: { equals: category.toLowerCase().trim() } };
     }
 
-    // Filtro por Rango de Precio
     if (minPrice || maxPrice) {
       where.pricePerHour = {
         ...(minPrice && { gte: minPrice }),
@@ -150,8 +164,6 @@ export class ServicesService {
       };
     }
 
-    // Ejecutar búsqueda
-    // En src/services/services.service.ts
     const services = await this.prisma.service.findMany({
       where,
       include: {
@@ -161,7 +173,6 @@ export class ServicesService {
             user: {
               select: {
                 name: true,
-                email: true,
                 reviewsReceived: { select: { rating: true } }
               }
             },
@@ -170,17 +181,12 @@ export class ServicesService {
       },
     });
 
-    // Filtro manual por Rating (Prisma no filtra por promedio de relación directo fácilmente)
+    // Filtro de rating (tu lógica actual)
     if (minRating) {
       return (services as any[]).filter((service) => {
-        // La ruta ahora es service -> provider -> user -> reviewsReceived
         const reviews = service.provider.user.reviewsReceived as any[];
-
         if (!reviews || reviews.length === 0) return false;
-
-        const sum = reviews.reduce((acc: number, r: any) => acc + r.rating, 0);
-        const avg = sum / reviews.length;
-
+        const avg = reviews.reduce((acc: number, r: any) => acc + r.rating, 0) / reviews.length;
         return avg >= minRating;
       });
     }

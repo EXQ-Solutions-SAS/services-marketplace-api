@@ -26,4 +26,16 @@ export class SearchServiceDto {
   @IsNumber()
   @Min(1)
   minRating?: number; // Filtro por estrellas
+
+  @IsOptional()
+  @Type(() => Number)
+  lat?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  lng?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  distance?: number = 5000;
 }
