@@ -1,10 +1,12 @@
 // 1. Configuración de conexión
 datasource db {
   provider = "postgresql"
+  extensions = [postgis]
 }
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions", "extendedIndexes"] 
 }
 
 enum Role {
@@ -86,7 +88,11 @@ model Provider {
   user     User                                   @relation(fields: [userId], references: [id])
   bio      String?
   category String // Aquí defines si es Plomero, Electricista, etc.
-  location Unsupported("geography(Point, 4326)")? // POSTGIS
+
+  // Ubicación geoespacial
+  location  Unsupported("geography(Point, 4326)")?
+  @@index([location], name: "location_idx", type: Gist)
+
   active   Boolean                                @default(true)
   services Service[]
   bookings Booking[]
@@ -125,7 +131,7 @@ model Booking {
 
   reviews Review[]
 
-  transaction  Transaction? 
+  transaction Transaction?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

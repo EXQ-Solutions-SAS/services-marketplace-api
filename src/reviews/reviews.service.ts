@@ -11,7 +11,7 @@ export class ReviewsService {
 
     // 1. Obtener la reserva con los datos del Service -> Provider -> User
     const booking = await this.prisma.booking.findUnique({
-      where: { id: bookingId },
+      where: { id: bookingId  },
       include: {
         service: {
           include: {
