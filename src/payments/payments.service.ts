@@ -1,11 +1,12 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
-import { TransactionStatus } from '@prisma/client';
+import { BookingStatus, TransactionStatus } from '@prisma/client';
+import { NotificationsService } from 'src/notifications/notifications.service';
 
 @Injectable()
 export class PaymentsService {
-    constructor(private prisma: PrismaService) { }
+    constructor(private prisma: PrismaService, private notificationsService: NotificationsService) { }
 
     async processPayment(createPaymentDto: CreatePaymentDto) {
         const { bookingId, amount, paymentMethod } = createPaymentDto;
@@ -70,5 +71,51 @@ export class PaymentsService {
         }
 
         return tx;
+    }
+
+    async handleWebhook(payload: any) {
+        // 1. EXTRAER EL ID (Esto depende de tu pasarela, ej: Stripe o PayPal)
+        // Por ahora lo sacamos del payload que envíes en el body
+        const { bookingId } = payload;
+
+        if (!bookingId) {
+            throw new BadRequestException('Booking ID is required in webhook payload');
+        }
+
+        // 2. ACTUALIZAR LA RESERVA
+        // Usamos el include para que TS reconozca "booking.service.provider"
+        const booking = await this.prisma.booking.update({
+            where: { id: bookingId },
+            data: {
+                // Usamos el valor del Enum de Prisma para evitar errores de tipo
+                status: 'PAID' as BookingStatus
+            },
+            include: {
+                customer: true,
+                service: {
+                    include: {
+                        provider: true
+                    }
+                }
+            }
+        });
+
+        // 3. NOTIFICACIÓN AL CLIENTE
+        await this.notificationsService.notifyUser(
+            booking.customerId,
+            'Pago Confirmado ✅',
+            'Tu pago ha sido procesado con éxito. ¡Prepárate para el servicio!',
+            { bookingId: booking.id, type: 'PAYMENT_CONFIRMED' }
+        );
+
+        // 4. NOTIFICACIÓN AL PROVEEDOR
+        await this.notificationsService.notifyUser(
+            booking.service.provider.userId,
+            'Servicio Pagado 💰',
+            `El cliente ${booking.customer.name || ''} ha pagado. Ya puedes coordinar la ejecución.`,
+            { bookingId: booking.id, type: 'PAYMENT_RECEIVED' }
+        );
+
+        return { received: true };
     }
 }
