@@ -70,6 +70,8 @@ model User {
   phone String?
   bio   String?
 
+  devices Device[]
+
   bookings Booking[] @relation("CustomerBookings")
 
   reviewsWritten  Review[] @relation("WrittenReviews")
@@ -80,6 +82,18 @@ model User {
   deletedAt DateTime? // Para el borrado lógico de la cuenta
 
   @@map("users")
+}
+
+model Device {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  platform  String?  // 'web', 'android', 'ios'
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model Provider {
