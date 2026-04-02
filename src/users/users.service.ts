@@ -7,14 +7,20 @@ import { UpdateUserDto } from './dto/update-user.dto';
 export class UsersService {
   constructor(private readonly prisma: PrismaService) { }
 
-  async findOrCreateUser(firebaseId: string, email: string, name?: string) {
+  async findOrCreateUser(firebaseId: string, email: string, name?: string, phone?: string) {
     return this.prisma.user.upsert({
       where: { firebaseId },
-      update: { email, name: name || undefined },
+      update: {
+        email,
+        name: name || undefined,
+        // Solo actualizamos el teléfono si viene algo nuevo
+        ...(phone && { phone })
+      },
       create: {
         firebaseId,
         email,
         name: name || 'Nuevo Usuario',
+        phone: phone || null,
         role: Role.CLIENT,
       },
     });
