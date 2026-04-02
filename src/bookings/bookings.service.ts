@@ -2,10 +2,11 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { BookingStatus } from '@prisma/client';
+import { NotificationsService } from 'src/notifications/notifications.service';
 
 @Injectable()
 export class BookingsService {
-    constructor(private prisma: PrismaService) { }
+    constructor(private prisma: PrismaService, private notificationsService: NotificationsService) { }
 
     async create(createBookingDto: CreateBookingDto, customerId: string) {
         const { serviceId, scheduledAt, hours } = createBookingDto;
@@ -30,7 +31,7 @@ export class BookingsService {
         const totalPrice = service.pricePerHour * hours;
 
         // 4. CREACIÓN: Usamos explícitamente el ID de la tabla PROVIDER
-        return this.prisma.booking.create({
+        const booking = await this.prisma.booking.create({
             data: {
                 customer: { connect: { id: customerId } },
                 provider: { connect: { id: service.provider.id } }, // <--- USAMOS EL ID DEL OBJETO PROVIDER
@@ -40,7 +41,23 @@ export class BookingsService {
                 scheduledAt: new Date(scheduledAt),
                 status: 'PENDING',
             },
+            include: {
+                service: {
+                    include: {
+                        provider: true
+                    }
+                }
+            }
         });
+
+        const providerUserId = booking.service.provider.userId;
+        await this.notificationsService.notifyUser(
+            providerUserId,
+            '¡Nueva solicitud de servicio!',
+            `Tienes una nueva reserva para "${booking.service.title}"`
+        );
+
+        return booking;
     }
 
     async updateStatus(id: string, status: BookingStatus, userId: string, role: string) {
