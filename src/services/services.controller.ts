@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { ServicesService } from './services.service';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
@@ -6,6 +6,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { FirebaseAuthGuard } from 'src/auth/firebase-auth.guard';
+import { SearchServiceDto } from './dto/search-service.dto';
 
 @Controller('services')
 export class ServicesController {
@@ -21,6 +22,11 @@ export class ServicesController {
   @Get()
   findAll() {
     return this.servicesService.findAll();
+  }
+
+  @Get('search')
+  async search(@Query() query: SearchServiceDto) {
+    return this.servicesService.search(query);
   }
 
   @Get(':id')
@@ -43,4 +49,6 @@ export class ServicesController {
   remove(@Param('id') id: string, @GetUser('id') userId: string) {
     return this.servicesService.remove(id, userId);
   }
+
+
 }

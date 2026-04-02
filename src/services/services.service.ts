@@ -2,6 +2,7 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
+import { SearchServiceDto } from './dto/search-service.dto';
 
 @Injectable()
 export class ServicesService {
@@ -61,6 +62,7 @@ export class ServicesService {
               select: {
                 name: true,
                 email: true,
+                reviewsReceived: { select: { rating: true } }
               },
             },
           },
@@ -114,5 +116,75 @@ export class ServicesService {
       where: { id },
       data: { deletedAt: new Date() },
     });
+  }
+
+  async search(query: SearchServiceDto) {
+    const { q, category, minPrice, maxPrice, minRating } = query;
+
+    const where: any = {
+      deletedAt: null, // No mostrar borrados
+    };
+
+    // Filtro por texto (Título o Descripción)
+    if (q) {
+      where.OR = [
+        { title: { contains: q, mode: 'insensitive' } },
+        { description: { contains: q, mode: 'insensitive' } },
+      ];
+    }
+
+    // Filtro por Categoría
+    if (category) {
+      where.category = {
+        slug: {
+          equals: category.toLowerCase().trim(),
+        }
+      };
+    }
+
+    // Filtro por Rango de Precio
+    if (minPrice || maxPrice) {
+      where.pricePerHour = {
+        ...(minPrice && { gte: minPrice }),
+        ...(maxPrice && { lte: maxPrice }),
+      };
+    }
+
+    // Ejecutar búsqueda
+    // En src/services/services.service.ts
+    const services = await this.prisma.service.findMany({
+      where,
+      include: {
+        category: true,
+        provider: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true,
+                reviewsReceived: { select: { rating: true } }
+              }
+            },
+          },
+        },
+      },
+    });
+
+    // Filtro manual por Rating (Prisma no filtra por promedio de relación directo fácilmente)
+    if (minRating) {
+      return (services as any[]).filter((service) => {
+        // La ruta ahora es service -> provider -> user -> reviewsReceived
+        const reviews = service.provider.user.reviewsReceived as any[];
+
+        if (!reviews || reviews.length === 0) return false;
+
+        const sum = reviews.reduce((acc: number, r: any) => acc + r.rating, 0);
+        const avg = sum / reviews.length;
+
+        return avg >= minRating;
+      });
+    }
+
+    return services;
   }
 }
