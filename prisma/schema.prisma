@@ -42,10 +42,10 @@ model Service {
   categoryId String
   category   Category @relation(fields: [categoryId], references: [id])
 
-  providerId   String
-  provider     Provider @relation(fields: [providerId], references: [id])
+  providerId String
+  provider   Provider @relation(fields: [providerId], references: [id])
 
-  bookings Booking[] 
+  bookings Booking[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -70,8 +70,8 @@ model User {
 
   bookings Booking[] @relation("CustomerBookings")
 
-  reviewsWritten   Review[]  @relation("WrittenReviews")
-  reviewsReceived  Review[]  @relation("ReceivedReviews")
+  reviewsWritten  Review[] @relation("WrittenReviews")
+  reviewsReceived Review[] @relation("ReceivedReviews")
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -101,62 +101,74 @@ enum BookingStatus {
 }
 
 model Booking {
-  id          String        @id @default(uuid())
-  
+  id String @id @default(uuid())
+
   // Relación con el Cliente
-  customerId  String
-  customer    User          @relation("CustomerBookings", fields: [customerId], references: [id])
-  
+  customerId String
+  customer   User   @relation("CustomerBookings", fields: [customerId], references: [id])
+
   // Relación con el Proveedor
-  providerId  String
-  provider    Provider      @relation(fields: [providerId], references: [id])
+  providerId String
+  provider   Provider @relation(fields: [providerId], references: [id])
 
   // NUEVO: Relación con el Servicio específico
-  serviceId   String
-  service     Service       @relation(fields: [serviceId], references: [id])
+  serviceId String
+  service   Service @relation(fields: [serviceId], references: [id])
 
-  hours       Int           @default(1) // Cantidad de horas contratadas
-  totalPrice  Float         // Calculado como: service.pricePerHour * hours
+  hours      Int   @default(1) // Cantidad de horas contratadas
+  totalPrice Float // Calculado como: service.pricePerHour * hours
 
   // NUEVO: Fecha de la cita
   scheduledAt DateTime
 
-  status      BookingStatus @default(PENDING) // Ahora usa el Enum
+  status BookingStatus @default(PENDING) // Ahora usa el Enum
 
-  reviews          Review[]
-  
-  payment     Payment?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  reviews Review[]
+
+  transaction  Transaction? 
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("bookings")
 }
 
-model Payment {
-  id        String   @id @default(uuid())
-  bookingId String   @unique
-  booking   Booking  @relation(fields: [bookingId], references: [id])
-  amount    Float
-  status    String // SUCCESS, FAILED, PENDING
-  method    String // Stripe, PayPal, Cash
-  updatedAt DateTime @updatedAt
+model Transaction {
+  id                String            @id @default(uuid())
+  bookingId         String            @unique
+  booking           Booking           @relation(fields: [bookingId], references: [id])
+  amount            Float
+  status            TransactionStatus @default(PENDING)
+  paymentMethod     String // "CARD", "CASH", "TRANSFER"
+  externalReference String? // Referencia simulada
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@map("transactions")
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
 }
 
 model Review {
-  id          String   @id @default(uuid())
-  rating      Int      // 1-5
-  comment     String?
-  
-  bookingId   String
-  booking     Booking  @relation(fields: [bookingId], references: [id])
+  id      String  @id @default(uuid())
+  rating  Int // 1-5
+  comment String?
 
-  reviewerId  String
-  reviewer    User     @relation("WrittenReviews", fields: [reviewerId], references: [id])
+  bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [id])
 
-  revieweeId  String
-  reviewee    User     @relation("ReceivedReviews", fields: [revieweeId], references: [id])
+  reviewerId String
+  reviewer   User   @relation("WrittenReviews", fields: [reviewerId], references: [id])
 
-  createdAt   DateTime @default(now())
+  revieweeId String
+  reviewee   User   @relation("ReceivedReviews", fields: [revieweeId], references: [id])
+
+  createdAt DateTime @default(now())
 
   @@unique([bookingId, reviewerId]) // Evita que una persona califique dos veces la misma cita
   @@map("reviews")

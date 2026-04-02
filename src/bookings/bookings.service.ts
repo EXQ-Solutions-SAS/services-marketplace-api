@@ -46,7 +46,7 @@ export class BookingsService {
     async updateStatus(id: string, status: BookingStatus, userId: string, role: string) {
         const booking = await this.prisma.booking.findUnique({
             where: { id },
-            include: { provider: true } // Para saber quién es el dueño del servicio
+            include: { provider: true, transaction: true } // Para saber quién es el dueño del servicio
         });
 
         if (!booking) throw new NotFoundException('Booking not found');
@@ -68,6 +68,21 @@ export class BookingsService {
         // REGLA 3: No se puede cambiar nada si ya está COMPLETED o CANCELLED (estados finales)
         if (booking.status === 'COMPLETED' || booking.status === 'CANCELLED') {
             throw new BadRequestException(`Cannot change status of a ${booking.status} booking`);
+        }
+
+        // REGLA 3.1: No actualizar al mismo estado
+        if (booking.status === status) {
+            throw new BadRequestException(`Booking is already in ${status} status`);
+        }
+
+        // REGLA 4: No se puede completar si el pago no se ha realizado o no es exitoso
+        if (status === 'COMPLETED') {
+            // Verificamos si existe la transacción y si está exitosa
+            if (!booking.transaction || booking.transaction.status !== 'COMPLETED') {
+                throw new BadRequestException(
+                    'Cannot complete booking: Payment is missing or was not successful.'
+                );
+            }
         }
 
         return this.prisma.booking.update({
