@@ -117,8 +117,8 @@ export class ServicesService {
   async update(id: string, updateServiceDto: UpdateServiceDto, userId: string) {
     const service = await this.findOne(id);
 
-    if (service.providerId !== userId) {
-      throw new ForbiddenException('You do not have permission to edit this service');
+    if (service.provider.userId !== userId) {
+      throw new ForbiddenException('No tienes permiso para editar este servicio');
     }
 
     return this.prisma.service.update({
@@ -130,8 +130,8 @@ export class ServicesService {
   async remove(id: string, userId: string) {
     const service = await this.findOne(id);
 
-    if (service.providerId !== userId) {
-      throw new ForbiddenException('You do not have permission to delete this service');
+    if (service.provider.userId !== userId) {
+      throw new ForbiddenException('No tienes permiso para eliminar este servicio');
     }
 
     return this.prisma.service.update({
