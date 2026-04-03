@@ -51,14 +51,21 @@ export class ServicesService {
     });
   }
 
-  async findAll() {
+  async findAll(excludeUserId?: string) {
     return this.prisma.service.findMany({
-      where: { deletedAt: null },
+      where: {
+        deletedAt: null,
+        ...(excludeUserId && {
+          provider: {
+            userId: { not: excludeUserId } // Filtramos: que el userId del provider NO sea el mio
+          }
+        })
+      },
       include: {
         category: { select: { name: true } },
         provider: {
           include: {
-            user: { // <--- AQUÍ entramos a la tabla User
+            user: {
               select: {
                 name: true,
                 email: true,
@@ -67,6 +74,21 @@ export class ServicesService {
             },
           },
         },
+      },
+    });
+  }
+
+  async findMyServices(userId: string) {
+    return this.prisma.service.findMany({
+      where: {
+        deletedAt: null,
+        provider: {
+          userId: userId // Solo los que me pertenecen
+        }
+      },
+      include: {
+        category: true, // Aquí sí traemos todo para poder editar
+        provider: true,
       },
     });
   }
