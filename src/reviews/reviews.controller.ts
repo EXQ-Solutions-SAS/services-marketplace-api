@@ -20,6 +20,6 @@ export class ReviewsController {
   // Obtener todas las reseñas que ha recibido un usuario específico (público)
   @Get('user/:userId')
   async getReviewsByUser(@Param('userId') userId: string) {
-    return this.reviewsService.findByUser(userId);
+    return this.reviewsService.findByUserWithStats(userId);
   }
 }
