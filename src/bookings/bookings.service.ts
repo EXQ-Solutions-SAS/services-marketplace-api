@@ -111,7 +111,15 @@ export class BookingsService {
     async findByProvider(userId: string) {
         return this.prisma.booking.findMany({
             where: { provider: { userId: userId } },
-            include: { service: true, customer: true },
+            include: {
+                service: true,
+                customer: true,
+                reviews: {
+                    select: {
+                        reviewerId: true // Con esto Flutter sabe si el usuario actual ya calificó
+                    }
+                }
+            },
             orderBy: { scheduledAt: 'asc' }
         });
     }
@@ -120,8 +128,41 @@ export class BookingsService {
     async findByCustomer(customerId: string) {
         return this.prisma.booking.findMany({
             where: { customerId },
-            include: { service: true, provider: true },
+            include: {
+                service: true,
+                provider: true,
+                reviews: {
+                    select: {
+                        reviewerId: true // Con esto Flutter sabe si el usuario actual ya calificó
+                    }
+                }
+            },
             orderBy: { createdAt: 'desc' }
+        });
+    }
+
+    async findAll() {
+        return this.prisma.booking.findMany({
+            orderBy: { scheduledAt: 'asc' },
+            include: {
+                service: true,
+                customer: true, // Importante para ver quién compró
+                provider: {
+                    include: {
+                        user: true // Para sacar el nombre del experto
+                    }
+                },
+                reviews: {
+                    select: {
+                        id: true,
+                        rating: true,
+                        comment: true,
+                        reviewerId: true,
+                        createdAt: true
+                    }
+                },
+                transaction: true // Útil para el Admin ver el estado del pago
+            },
         });
     }
 }

@@ -9,9 +9,9 @@ dotenv.config();
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   constructor() {
+    const url = process.env.DATABASE_URL?.replace(/"/g, '');
     // 1. Creamos el pool de conexiones nativo de Postgres
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-
+    const pool = new Pool({ connectionString: url });
     // 2. Creamos el adaptador de Prisma usando ese pool
     const adapter = new PrismaPg(pool);
 

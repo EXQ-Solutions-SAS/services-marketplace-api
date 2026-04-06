@@ -4,6 +4,8 @@ import { CreateBookingDto } from './dto/create-booking.dto';
 import { FirebaseAuthGuard } from '../auth/firebase-auth.guard';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { Roles } from 'src/auth/decorators/roles.decorator';
 
 @Controller('bookings')
 @UseGuards(FirebaseAuthGuard)
@@ -16,6 +18,13 @@ export class BookingsController {
         @GetUser('id') userId: string,
     ) {
         return this.bookingsService.create(createBookingDto, userId);
+    }
+
+    @Get('admin')
+    @UseGuards(FirebaseAuthGuard, RolesGuard)
+    @Roles('ADMIN') // Solo el admin ve la lista completa
+    async findAll() {
+        return this.bookingsService.findAll();
     }
 
     @Get('my-bookings')

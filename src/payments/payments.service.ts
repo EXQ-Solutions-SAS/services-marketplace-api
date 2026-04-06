@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
-import { BookingStatus, TransactionStatus } from '@prisma/client';
+import { BookingStatus } from '@prisma/client';
 import { NotificationsService } from 'src/notifications/notifications.service';
 
 @Injectable()
@@ -11,39 +11,69 @@ export class PaymentsService {
     async processPayment(createPaymentDto: CreatePaymentDto) {
         const { bookingId, amount, paymentMethod } = createPaymentDto;
 
-        // 1. Verificar que la reserva existe
+        // 1. Validaciones previas
         const booking = await this.prisma.booking.findUnique({
             where: { id: bookingId },
+            include: { transaction: true } // Vemos si ya tiene transacción
         });
 
-        if (!booking) throw new NotFoundException('Booking not found');
+        if (!booking) throw new NotFoundException('Reserva no encontrada');
 
-        // 2. Crear la transacción en estado PENDING
-        const transaction = await this.prisma.transaction.create({
-            data: {
-                bookingId,
-                amount,
-                paymentMethod,
-                status: 'PENDING',
-            },
+        if (booking.transaction?.status === 'COMPLETED') {
+            throw new BadRequestException('Esta reserva ya fue pagada exitosamente.');
+        }
+
+        // 2. Transacción de base de datos (Garantiza que el pago y el estado cambien juntos)
+        // Usamos una transacción de Prisma ($transaction) para que si algo falla, nada se guarde
+        return await this.prisma.$transaction(async (tx) => {
+
+            // A. Crear o actualizar la transacción (usamos upsert por si ya existía una fallida)
+            const transaction = await tx.transaction.upsert({
+                where: { bookingId },
+                update: {
+                    amount,
+                    paymentMethod,
+                    status: 'PENDING',
+                },
+                create: {
+                    bookingId,
+                    amount,
+                    paymentMethod,
+                    status: 'PENDING',
+                },
+            });
+
+            // B. Simular el delay de la pasarela (Mock)
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // C. Actualizar Transacción a COMPLETED
+            const completedTx = await tx.transaction.update({
+                where: { id: transaction.id },
+                data: {
+                    status: 'COMPLETED',
+                    externalReference: `MOCK_REF_${Math.random().toString(36).toUpperCase().substring(2, 10)}`,
+                }
+            });
+
+            // D. ACTUALIZAR EL ESTADO DE LA RESERVA A PAID
+            await tx.booking.update({
+                where: { id: bookingId },
+                data: { status: 'PAID' } // Ahora sí coincide con el Enum corregido
+            });
+
+            return {
+                message: 'Payment processed successfully',
+                transaction: completedTx
+            };
         });
+    }
 
-        // 3. SIMULACIÓN DE PASARELA (Mock)
-        // Esperamos 2 segundos y devolvemos "éxito"
-        return new Promise((resolve) => {
-            setTimeout(async () => {
-                const updated = await this.prisma.transaction.update({
-                    where: { id: transaction.id },
-                    data: {
-                        status: 'COMPLETED' as TransactionStatus,
-                        externalReference: `MOCK_REF_${Math.random().toString(36).toUpperCase().substring(2, 10)}`,
-                    },
-                });
-                resolve({
-                    message: 'Payment processed successfully',
-                    transaction: updated,
-                });
-            }, 2000);
+    async findAll() {
+        return this.prisma.transaction.findMany({
+            orderBy: { createdAt: 'desc' },
+            include: {
+                booking: true,
+            }
         });
     }
 

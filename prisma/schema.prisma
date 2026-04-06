@@ -116,6 +116,7 @@ model Provider {
 enum BookingStatus {
   PENDING
   ACCEPTED
+  PAID
   COMPLETED
   CANCELLED
 }

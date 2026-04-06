@@ -20,13 +20,20 @@ export class ServicesController {
   }
 
   @Get()
-  findAll() {
-    return this.servicesService.findAll();
+  findAll(@Query('excludeUserId') excludeUserId?: string) {
+    // Ahora permitimos pasar un ID para no mostrar los servicios de ese usuario
+    return this.servicesService.findAll(excludeUserId);
   }
 
   @Get('search')
   async search(@Query() query: SearchServiceDto) {
     return this.servicesService.search(query);
+  }
+
+  @Get('mine') // <--- NUEVO: Debe ir ANTES de Get(':id') para que Nest no lo confunda con un ID
+  @UseGuards(FirebaseAuthGuard)
+  findMyServices(@GetUser('id') userId: string) {
+    return this.servicesService.findMyServices(userId);
   }
 
   @Get(':id')

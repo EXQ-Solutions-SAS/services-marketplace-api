@@ -51,14 +51,21 @@ export class ServicesService {
     });
   }
 
-  async findAll() {
+  async findAll(excludeUserId?: string) {
     return this.prisma.service.findMany({
-      where: { deletedAt: null },
+      where: {
+        deletedAt: null,
+        ...(excludeUserId && {
+          provider: {
+            userId: { not: excludeUserId } // Filtramos: que el userId del provider NO sea el mio
+          }
+        })
+      },
       include: {
         category: { select: { name: true } },
         provider: {
           include: {
-            user: { // <--- AQUÍ entramos a la tabla User
+            user: {
               select: {
                 name: true,
                 email: true,
@@ -67,6 +74,24 @@ export class ServicesService {
             },
           },
         },
+        _count: {
+          select: { bookings: true }
+        }
+      },
+    });
+  }
+
+  async findMyServices(userId: string) {
+    return this.prisma.service.findMany({
+      where: {
+        deletedAt: null,
+        provider: {
+          userId: userId // Solo los que me pertenecen
+        }
+      },
+      include: {
+        category: true, // Aquí sí traemos todo para poder editar
+        provider: true,
       },
     });
   }
@@ -95,8 +120,8 @@ export class ServicesService {
   async update(id: string, updateServiceDto: UpdateServiceDto, userId: string) {
     const service = await this.findOne(id);
 
-    if (service.providerId !== userId) {
-      throw new ForbiddenException('You do not have permission to edit this service');
+    if (service.provider.userId !== userId) {
+      throw new ForbiddenException('No tienes permiso para editar este servicio');
     }
 
     return this.prisma.service.update({
@@ -108,8 +133,8 @@ export class ServicesService {
   async remove(id: string, userId: string) {
     const service = await this.findOne(id);
 
-    if (service.providerId !== userId) {
-      throw new ForbiddenException('You do not have permission to delete this service');
+    if (service.provider.userId !== userId) {
+      throw new ForbiddenException('No tienes permiso para eliminar este servicio');
     }
 
     return this.prisma.service.update({

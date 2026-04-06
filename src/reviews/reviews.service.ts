@@ -4,48 +4,39 @@ import { CreateReviewDto } from './dto/create-review.dto';
 
 @Injectable()
 export class ReviewsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async create(createReviewDto: CreateReviewDto, reviewerId: string) {
     const { bookingId, rating, comment } = createReviewDto;
 
-    // 1. Obtener la reserva con los datos del Service -> Provider -> User
+    // 1. Obtener booking con sus participantes
     const booking = await this.prisma.booking.findUnique({
-      where: { id: bookingId  },
+      where: { id: bookingId },
       include: {
-        service: {
-          include: {
-            provider: true,
-          },
-        },
+        service: { include: { provider: true } },
       },
     });
 
     if (!booking) throw new NotFoundException('Booking not found');
-
-    // 2. Solo se califica lo que ya se terminó
     if (booking.status !== 'COMPLETED') {
       throw new BadRequestException('You can only review completed bookings');
     }
 
-    // 3. Lógica para determinar el Reviewee (quién recibe la nota)
+    // 2. Determinar quién recibe la calificación
     let revieweeId: string;
-
     const providerUserId = booking.service.provider.userId;
 
     if (booking.customerId === reviewerId) {
-      // El que califica es el cliente, el que recibe es el proveedor
       revieweeId = providerUserId;
     } else if (providerUserId === reviewerId) {
-      // El que califica es el proveedor, el que recibe es el cliente
       revieweeId = booking.customerId;
     } else {
-      // Alguien que no pertenece a la reserva intenta meterse
       throw new BadRequestException('You are not a participant of this booking');
     }
 
-    // 4. Crear la reseña (el @@unique en Prisma evitará duplicados)
     try {
+      // 3. Crear la reseña
+      // Al usar el bookingId, Prisma ya la asocia automáticamente al array reviews[] del Booking
       return await this.prisma.review.create({
         data: {
           rating,
@@ -63,14 +54,47 @@ export class ReviewsService {
     }
   }
 
-  // Para mostrar en el perfil del usuario/proveedor
-  async findByUser(userId: string) {
-    return this.prisma.review.findMany({
+  // 4. Traer reseñas + Promedio en una sola respuesta
+  async findByUserWithStats(userId: string) {
+    const [reviews, stats] = await Promise.all([
+      this.prisma.review.findMany({
+        where: { revieweeId: userId },
+        include: {
+          reviewer: {
+            select: { id: true, name: true, email: true }
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.getAverageRating(userId)
+    ]);
+
+    return {
+      stats,   // Aquí va { average, total }
+      reviews  // Aquí la lista de reseñas
+    };
+  }
+
+  async getAverageRating(userId: string) {
+    const aggregate = await this.prisma.review.aggregate({
       where: { revieweeId: userId },
-      include: {
-        reviewer: { select: { name: true, email: true } },
-      },
+      _avg: { rating: true },
+      _count: { rating: true },
+    });
+    return {
+      average: Number((aggregate._avg.rating || 0).toFixed(1)), // Redondeado a 1 decimal
+      total: aggregate._count.rating,
+    };
+  }
+
+  async findAll() {
+    return this.prisma.review.findMany({
       orderBy: { createdAt: 'desc' },
+      include: {
+        reviewee: true,
+        reviewer: true,
+        booking: true,
+      }
     });
   }
 }
