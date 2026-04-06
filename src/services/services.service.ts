@@ -74,6 +74,9 @@ export class ServicesService {
             },
           },
         },
+        _count: {
+          select: { bookings: true }
+        }
       },
     });
   }

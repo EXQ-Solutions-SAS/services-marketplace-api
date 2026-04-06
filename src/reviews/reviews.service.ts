@@ -86,4 +86,15 @@ export class ReviewsService {
       total: aggregate._count.rating,
     };
   }
+
+  async findAll() {
+    return this.prisma.review.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        reviewee: true,
+        reviewer: true,
+        booking: true,
+      }
+    });
+  }
 }

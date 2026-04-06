@@ -140,4 +140,29 @@ export class BookingsService {
             orderBy: { createdAt: 'desc' }
         });
     }
+
+    async findAll() {
+        return this.prisma.booking.findMany({
+            orderBy: { scheduledAt: 'asc' },
+            include: {
+                service: true,
+                customer: true, // Importante para ver quién compró
+                provider: {
+                    include: {
+                        user: true // Para sacar el nombre del experto
+                    }
+                },
+                reviews: {
+                    select: {
+                        id: true,
+                        rating: true,
+                        comment: true,
+                        reviewerId: true,
+                        createdAt: true
+                    }
+                },
+                transaction: true // Útil para el Admin ver el estado del pago
+            },
+        });
+    }
 }

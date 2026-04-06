@@ -68,6 +68,15 @@ export class PaymentsService {
         });
     }
 
+    async findAll() {
+        return this.prisma.transaction.findMany({
+            orderBy: { createdAt: 'desc' },
+            include: {
+                booking: true,
+            }
+        });
+    }
+
     async getStatus(bookingId: string, userId: string, role: string) {
         const tx = await this.prisma.transaction.findUnique({
             where: { bookingId },
