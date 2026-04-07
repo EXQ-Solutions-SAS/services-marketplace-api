@@ -1,4 +1,8 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
@@ -6,7 +10,7 @@ import { SearchServiceDto } from './dto/search-service.dto';
 
 @Injectable()
 export class ServicesService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async create(createServiceDto: CreateServiceDto, userId: string) {
     const { categoryId, ...serviceData } = createServiceDto;
@@ -14,7 +18,7 @@ export class ServicesService {
     // 1. Buscamos al usuario para ver su rol actual
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { provider: true } // Traemos el perfil de provider si existe
+      include: { provider: true }, // Traemos el perfil de provider si existe
     });
 
     if (!user) throw new NotFoundException('User not found');
@@ -57,9 +61,9 @@ export class ServicesService {
         deletedAt: null,
         ...(excludeUserId && {
           provider: {
-            userId: { not: excludeUserId } // Filtramos: que el userId del provider NO sea el mio
-          }
-        })
+            userId: { not: excludeUserId }, // Filtramos: que el userId del provider NO sea el mio
+          },
+        }),
       },
       include: {
         category: { select: { name: true } },
@@ -69,14 +73,14 @@ export class ServicesService {
               select: {
                 name: true,
                 email: true,
-                reviewsReceived: { select: { rating: true } }
+                reviewsReceived: { select: { rating: true } },
               },
             },
           },
         },
         _count: {
-          select: { bookings: true }
-        }
+          select: { bookings: true },
+        },
       },
     });
   }
@@ -86,8 +90,8 @@ export class ServicesService {
       where: {
         deletedAt: null,
         provider: {
-          userId: userId // Solo los que me pertenecen
-        }
+          userId: userId, // Solo los que me pertenecen
+        },
       },
       include: {
         category: true, // Aquí sí traemos todo para poder editar
@@ -103,7 +107,8 @@ export class ServicesService {
         category: true,
         provider: {
           include: {
-            user: { // <--- AQUÍ entramos a la tabla User
+            user: {
+              // <--- AQUÍ entramos a la tabla User
               select: {
                 name: true,
                 email: true,
@@ -121,7 +126,9 @@ export class ServicesService {
     const service = await this.findOne(id);
 
     if (service.provider.userId !== userId) {
-      throw new ForbiddenException('No tienes permiso para editar este servicio');
+      throw new ForbiddenException(
+        'No tienes permiso para editar este servicio',
+      );
     }
 
     return this.prisma.service.update({
@@ -134,7 +141,9 @@ export class ServicesService {
     const service = await this.findOne(id);
 
     if (service.provider.userId !== userId) {
-      throw new ForbiddenException('No tienes permiso para eliminar este servicio');
+      throw new ForbiddenException(
+        'No tienes permiso para eliminar este servicio',
+      );
     }
 
     return this.prisma.service.update({
@@ -144,7 +153,8 @@ export class ServicesService {
   }
 
   async search(query: SearchServiceDto) {
-    const { q, category, minPrice, maxPrice, minRating, lat, lng, distance } = query;
+    const { q, category, minPrice, maxPrice, minRating, lat, lng, distance } =
+      query;
 
     // 1. SI HAY COORDENADAS: Usamos PostGIS (SQL RAW)
     if (lat && lng) {
@@ -198,8 +208,8 @@ export class ServicesService {
             user: {
               select: {
                 name: true,
-                reviewsReceived: { select: { rating: true } }
-              }
+                reviewsReceived: { select: { rating: true } },
+              },
             },
           },
         },
@@ -211,7 +221,9 @@ export class ServicesService {
       return (services as any[]).filter((service) => {
         const reviews = service.provider.user.reviewsReceived as any[];
         if (!reviews || reviews.length === 0) return false;
-        const avg = reviews.reduce((acc: number, r: any) => acc + r.rating, 0) / reviews.length;
+        const avg =
+          reviews.reduce((acc: number, r: any) => acc + r.rating, 0) /
+          reviews.length;
         return avg >= minRating;
       });
     }

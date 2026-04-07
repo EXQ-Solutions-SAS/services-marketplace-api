@@ -7,7 +7,11 @@ export class AdminStatsService {
 
   async getDashboardSummary() {
     const now = new Date();
-    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+    const lastMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() - 1,
+      now.getDate(),
+    );
 
     // Ejecutamos varias promesas en paralelo para mayor velocidad
     const [
@@ -16,7 +20,7 @@ export class AdminStatsService {
       totalUsers,
       totalBookings,
       pendingBookings,
-      categoryStats
+      categoryStats,
     ] = await Promise.all([
       // 1. Revenue Total (Completed)
       this.prisma.transaction.aggregate({
@@ -26,9 +30,9 @@ export class AdminStatsService {
       // 2. Revenue Mes Pasado (Para calcular tendencia %)
       this.prisma.transaction.aggregate({
         _sum: { amount: true },
-        where: { 
+        where: {
           status: 'COMPLETED',
-          createdAt: { gte: lastMonth }
+          createdAt: { gte: lastMonth },
         },
       }),
       // 3. Conteo de Usuarios
@@ -43,11 +47,11 @@ export class AdminStatsService {
           _count: { select: { services: true } },
           services: {
             include: {
-              _count: { select: { bookings: true } }
-            }
-          }
-        }
-      })
+              _count: { select: { bookings: true } },
+            },
+          },
+        },
+      }),
     ]);
 
     return {
@@ -56,20 +60,20 @@ export class AdminStatsService {
         revenueGrowth: 12.5, // Aquí podrías calcular la diferencia real vs mes pasado
         users: totalUsers,
         bookings: totalBookings,
-        pendingRate: (pendingBookings / totalBookings) * 100
+        pendingRate: (pendingBookings / totalBookings) * 100,
       },
       charts: {
-        categories: categoryStats.map(c => ({
+        categories: categoryStats.map((c) => ({
           name: c.name,
-          value: c.services.reduce((acc, s) => acc + s._count.bookings, 0)
-        }))
-      }
+          value: c.services.reduce((acc, s) => acc + s._count.bookings, 0),
+        })),
+      },
     };
   }
 
   // Query para la gráfica de línea (Ventas por mes)
   async getRevenueHistory() {
-    // Nota: Para gráficas de tiempo, a veces es mejor usar Raw Query en Prisma 
+    // Nota: Para gráficas de tiempo, a veces es mejor usar Raw Query en Prisma
     // para agrupar por mes directamente en PostgreSQL
     return this.prisma.$queryRaw`
       SELECT 

@@ -8,6 +8,6 @@ import { NotificationsModule } from 'src/notifications/notifications.module';
 @Module({
   imports: [PrismaModule, UsersModule, NotificationsModule],
   providers: [PaymentsService],
-  controllers: [PaymentsController]
+  controllers: [PaymentsController],
 })
 export class PaymentsModule {}

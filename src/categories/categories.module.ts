@@ -6,7 +6,7 @@ import { UsersModule } from 'src/users/users.module';
 import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule,UsersModule], 
+  imports: [PrismaModule, AuthModule, UsersModule],
   controllers: [CategoriesController],
   providers: [CategoriesService],
 })

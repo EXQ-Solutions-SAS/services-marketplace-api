@@ -1,10 +1,14 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 
 @Injectable()
 export class ReviewsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async create(createReviewDto: CreateReviewDto, reviewerId: string) {
     const { bookingId, rating, comment } = createReviewDto;
@@ -31,7 +35,9 @@ export class ReviewsService {
     } else if (providerUserId === reviewerId) {
       revieweeId = booking.customerId;
     } else {
-      throw new BadRequestException('You are not a participant of this booking');
+      throw new BadRequestException(
+        'You are not a participant of this booking',
+      );
     }
 
     try {
@@ -61,17 +67,17 @@ export class ReviewsService {
         where: { revieweeId: userId },
         include: {
           reviewer: {
-            select: { id: true, name: true, email: true }
+            select: { id: true, name: true, email: true },
           },
         },
         orderBy: { createdAt: 'desc' },
       }),
-      this.getAverageRating(userId)
+      this.getAverageRating(userId),
     ]);
 
     return {
-      stats,   // Aquí va { average, total }
-      reviews  // Aquí la lista de reseñas
+      stats, // Aquí va { average, total }
+      reviews, // Aquí la lista de reseñas
     };
   }
 
@@ -94,7 +100,7 @@ export class ReviewsService {
         reviewee: true,
         reviewer: true,
         booking: true,
-      }
+      },
     });
   }
 }

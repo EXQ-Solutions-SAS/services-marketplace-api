@@ -30,14 +30,20 @@ export class NotificationsService {
     try {
       // 3. Enviamos a todos los dispositivos
       const response = await admin.messaging().sendEachForMulticast(message);
-      
-      this.logger.log(`Notificaciones enviadas: ${response.successCount} exitosas.`);
+
+      this.logger.log(
+        `Notificaciones enviadas: ${response.successCount} exitosas.`,
+      );
 
       // 4. LIMPIEZA AUTOMÁTICA: Si Firebase dice que un token ya no sirve, lo borramos
       if (response.failureCount > 0) {
         response.responses.forEach((resp, idx) => {
-          if (!resp.success && (resp.error?.code === 'messaging/invalid-registration-token' || 
-                                resp.error?.code === 'messaging/registration-token-not-registered')) {
+          if (
+            !resp.success &&
+            (resp.error?.code === 'messaging/invalid-registration-token' ||
+              resp.error?.code ===
+                'messaging/registration-token-not-registered')
+          ) {
             this.devicesService.removeToken(tokens[idx]);
             this.logger.log(`Token expirado eliminado: ${tokens[idx]}`);
           }

@@ -4,7 +4,7 @@ import { RegisterDeviceDto } from './dto/register-device.dto';
 
 @Injectable()
 export class DevicesService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async register(userId: string, registerDeviceDto: RegisterDeviceDto) {
     const { token, platform } = registerDeviceDto;
@@ -28,7 +28,7 @@ export class DevicesService {
 
     const result = await this.prisma.device.deleteMany({
       where: {
-        token: token.trim()
+        token: token.trim(),
       },
     });
 

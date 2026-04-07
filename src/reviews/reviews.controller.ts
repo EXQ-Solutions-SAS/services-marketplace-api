@@ -8,7 +8,7 @@ import { Roles } from 'src/auth/decorators/roles.decorator';
 
 @Controller('reviews')
 export class ReviewsController {
-  constructor(private readonly reviewsService: ReviewsService) { }
+  constructor(private readonly reviewsService: ReviewsService) {}
 
   @Post()
   @UseGuards(FirebaseAuthGuard)

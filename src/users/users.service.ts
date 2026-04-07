@@ -5,16 +5,21 @@ import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
-  async findOrCreateUser(firebaseId: string, email: string, name?: string, phone?: string) {
+  async findOrCreateUser(
+    firebaseId: string,
+    email: string,
+    name?: string,
+    phone?: string,
+  ) {
     return this.prisma.user.upsert({
       where: { firebaseId },
       update: {
         email,
         name: name || undefined,
         // Solo actualizamos el teléfono si viene algo nuevo
-        ...(phone && { phone })
+        ...(phone && { phone }),
       },
       create: {
         firebaseId,
@@ -33,11 +38,11 @@ export class UsersService {
         provider: {
           select: {
             _count: {
-              select: { services: true }
-            }
-          }
-        }
-      }
+              select: { services: true },
+            },
+          },
+        },
+      },
     });
   }
 
@@ -46,9 +51,9 @@ export class UsersService {
       where: { id },
       include: {
         provider: {
-          include: { services: true }
-        }
-      }
+          include: { services: true },
+        },
+      },
     });
     if (!user) throw new NotFoundException('User not found');
     return user;
@@ -57,7 +62,7 @@ export class UsersService {
   async updateRole(id: string, role: Role) {
     return this.prisma.user.update({
       where: { id },
-      data: { role }
+      data: { role },
     });
   }
 
@@ -68,11 +73,11 @@ export class UsersService {
         provider: {
           select: {
             _count: {
-              select: { services: true }
-            }
-          }
-        }
-      }
+              select: { services: true },
+            },
+          },
+        },
+      },
     });
     if (!user) throw new NotFoundException('User not found');
     return user;

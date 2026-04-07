@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Query,
+} from '@nestjs/common';
 import { ServicesService } from './services.service';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
@@ -10,12 +20,15 @@ import { SearchServiceDto } from './dto/search-service.dto';
 
 @Controller('services')
 export class ServicesController {
-  constructor(private readonly servicesService: ServicesService) { }
+  constructor(private readonly servicesService: ServicesService) {}
 
   @Post()
   @UseGuards(FirebaseAuthGuard, RolesGuard)
   @Roles('PROVIDER', 'ADMIN', 'CLIENT')
-  create(@Body() createServiceDto: CreateServiceDto, @GetUser('id') userId: string) {
+  create(
+    @Body() createServiceDto: CreateServiceDto,
+    @GetUser('id') userId: string,
+  ) {
     return this.servicesService.create(createServiceDto, userId);
   }
 
@@ -46,7 +59,7 @@ export class ServicesController {
   update(
     @Param('id') id: string,
     @Body() updateServiceDto: UpdateServiceDto,
-    @GetUser('id') userId: string
+    @GetUser('id') userId: string,
   ) {
     return this.servicesService.update(id, updateServiceDto, userId);
   }
@@ -56,6 +69,4 @@ export class ServicesController {
   remove(@Param('id') id: string, @GetUser('id') userId: string) {
     return this.servicesService.remove(id, userId);
   }
-
-
 }

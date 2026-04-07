@@ -7,19 +7,19 @@ import { FirebaseAuthGuard } from 'src/auth/firebase-auth.guard';
 @Controller('admin-stats')
 @UseGuards(FirebaseAuthGuard)
 export class AdminStatsController {
-    constructor(private readonly statsService: AdminStatsService) { }
+  constructor(private readonly statsService: AdminStatsService) {}
 
-    @Get('summary')
-    @UseGuards(FirebaseAuthGuard, RolesGuard)
-    @Roles('ADMIN')
-    async getSummary() {
-        return this.statsService.getDashboardSummary();
-    }
+  @Get('summary')
+  @UseGuards(FirebaseAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  async getSummary() {
+    return this.statsService.getDashboardSummary();
+  }
 
-    @Get('revenue-history')
-    @UseGuards(FirebaseAuthGuard, RolesGuard)
-    @Roles('ADMIN')
-    async getHistory() {
-        return this.statsService.getRevenueHistory();
-    }
+  @Get('revenue-history')
+  @UseGuards(FirebaseAuthGuard, RolesGuard)
+  @Roles('ADMIN')
+  async getHistory() {
+    return this.statsService.getRevenueHistory();
+  }
 }
