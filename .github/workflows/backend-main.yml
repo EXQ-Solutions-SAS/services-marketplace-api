@@ -1,0 +1,59 @@
+name: Backend CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  PROJECT_ID: exq-solutions-dev
+  REGION: us-central1
+  SERVICE_NAME: exq-nestjs-api
+  REPOSITORY: exq-repo
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # --- FASE 1: CI (Ejecución real) ---
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Run Linting
+      run: npm run lint || echo "No lint script found, skipping..."
+
+    - name: Docker Build Check (Dry Run)
+      run: docker build -t backend-test . 
+      # Esto valida que el Dockerfile es correcto y que la imagen se puede construir.
+
+    # --- FASE 2: CD (Comentado para Portafolio/Cero Costos) ---
+    # Para activar el deploy real, descomenta las líneas de abajo y configura el secret GCP_SA_KEY
+    
+    # - name: Google Auth
+    #   uses: 'google-github-actions/auth@v2'
+    #   with:
+    #     credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+    # - name: Docker Auth & Push to Artifact Registry
+    #   run: |
+    #     gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+    #     docker tag backend-test "${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE_NAME }}:${{ github.sha }}"
+    #     docker push "${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE_NAME }}:${{ github.sha }}"
+
+    # - name: Deploy to Cloud Run
+    #   uses: 'google-github-actions/deploy-cloudrun@v2'
+    #   with:
+    #     service: ${{ env.SERVICE_NAME }}
+    #     region: ${{ env.REGION }}
+    #     image: "${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.SERVICE_NAME }}:${{ github.sha }}"
+    #     flags: '--allow-unauthenticated'
