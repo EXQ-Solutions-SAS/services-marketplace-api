@@ -1,11 +1,16 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import * as admin from 'firebase-admin';
 import { UsersService } from '../users/users.service'; // Asegúrate de importar tu servicio
 
 @Injectable()
 export class FirebaseAuthGuard implements CanActivate {
   // Inyectamos UsersService en lugar de Prisma directamente
-  constructor(private usersService: UsersService) { }
+  constructor(private usersService: UsersService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -24,7 +29,7 @@ export class FirebaseAuthGuard implements CanActivate {
       const user = await this.usersService.findOrCreateUser(
         decodedToken.uid,
         decodedToken.email || 'no-email@firebase.com',
-        decodedToken.name
+        decodedToken.name,
       );
 
       // Si el usuario está borrado lógicamente, no lo dejamos pasar
@@ -36,8 +41,10 @@ export class FirebaseAuthGuard implements CanActivate {
       request['user'] = user;
 
       return true;
-    }catch (error: any) {
-      throw new UnauthorizedException(error.message || 'Invalid token or sync failed');
+    } catch (error: any) {
+      throw new UnauthorizedException(
+        error.message || 'Invalid token or sync failed',
+      );
     }
   }
 }

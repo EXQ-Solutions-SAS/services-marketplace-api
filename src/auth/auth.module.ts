@@ -5,10 +5,7 @@ import { FirebaseAuthGuard } from './firebase-auth.guard';
 import { UsersModule } from 'src/users/users.module';
 
 @Module({
-  imports: [
-    PrismaModule,
-    UsersModule,
-  ],
+  imports: [PrismaModule, UsersModule],
   providers: [AuthService, FirebaseAuthGuard],
   exports: [AuthService, FirebaseAuthGuard], // Exportalo para que otros módulos lo usen
 })

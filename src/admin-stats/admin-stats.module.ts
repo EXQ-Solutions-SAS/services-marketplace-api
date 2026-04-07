@@ -5,8 +5,8 @@ import { AdminStatsController } from './admin-stats.controller';
 import { AdminStatsService } from './admin-stats.service';
 
 @Module({
-    imports: [PrismaModule, UsersModule],
-    controllers: [AdminStatsController],
-    providers: [AdminStatsService],
+  imports: [PrismaModule, UsersModule],
+  controllers: [AdminStatsController],
+  providers: [AdminStatsService],
 })
-export class AdminStatsModule { }
+export class AdminStatsModule {}

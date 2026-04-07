@@ -16,7 +16,19 @@ import { AdminStatsService } from './admin-stats/admin-stats.service';
 import { AdminStatsModule } from './admin-stats/admin-stats.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UsersModule, CategoriesModule, ServicesModule, BookingsModule, ReviewsModule, PaymentsModule, DevicesModule, NotificationsModule, AdminStatsModule],
+  imports: [
+    PrismaModule,
+    AuthModule,
+    UsersModule,
+    CategoriesModule,
+    ServicesModule,
+    BookingsModule,
+    ReviewsModule,
+    PaymentsModule,
+    DevicesModule,
+    NotificationsModule,
+    AdminStatsModule,
+  ],
   controllers: [AppController, AdminStatsController],
   providers: [AppService, AdminStatsService],
 })

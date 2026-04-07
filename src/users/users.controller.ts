@@ -1,4 +1,12 @@
-import { Controller, Get, Patch, Delete, Body, UseGuards, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Delete,
+  Body,
+  UseGuards,
+  Param,
+} from '@nestjs/common';
 import { UsersService } from './users.service';
 import { GetUser } from 'src/auth/decorators/get-user.decorator';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -10,7 +18,7 @@ import { UpdateRoleDto } from './dto/update-role.dto';
 @Controller('users')
 @UseGuards(FirebaseAuthGuard)
 export class UsersController {
-  constructor(private readonly usersService: UsersService) { }
+  constructor(private readonly usersService: UsersService) {}
 
   @Get('me')
   async getMyProfile(@GetUser() user: any) {
@@ -19,7 +27,10 @@ export class UsersController {
   }
 
   @Patch('me')
-  async updateProfile(@GetUser('id') userId: string, @Body() dto: UpdateUserDto) {
+  async updateProfile(
+    @GetUser('id') userId: string,
+    @Body() dto: UpdateUserDto,
+  ) {
     return this.usersService.update(userId, dto);
   }
 
